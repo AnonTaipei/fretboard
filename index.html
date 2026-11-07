@@ -2,18 +2,19 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>專業吉他指板模擬器 - 24格版</title>
     <style>
         :root {
             --fretboard-bg: #2d1f16; 
             --string-color: linear-gradient(to bottom, #888, #ddd, #888);
             --fret-wire: linear-gradient(to right, #999, #eee, #999);
-            --active-color: #ffcc00; 
+            --active-color: #ffffff; 
             --inlay-color: rgba(255, 255, 255, 0.15);
             
-            /* 動態縮放變數：基礎寬度 */
-            --tuning-width: 60px;
-            --open-width: 70px;
+            /* 動態縮放變數：加大 tuning，縮窄 open 的寬度 */
+            --tuning-width: 110px;
+            --open-width: 55px;
             --fret-width: 75px;
             --marker-size: 28px;
             --dot-size: 18px;
@@ -27,52 +28,121 @@
             display: flex; 
             flex-direction: column; 
             align-items: center; 
-            padding: 40px 20px;
+            padding: 20px 0;
             margin: 0;
             overflow-x: hidden;
+            user-select: none;
         }
         
-        h2 { font-weight: 300; letter-spacing: 2px; margin-bottom: 30px; color: #fff; }
+        h2 { font-weight: 300; letter-spacing: 2px; margin-bottom: 20px; color: #fff; }
 
-        /* 上方半音選擇按鈕區 */
+        /* 上方控制選單區 */
+        .controls-wrapper {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 25px;
+            width: 100%;
+        }
+
+        .preset-tuning-container {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background: #1e1e1e;
+            padding: 10px 18px;
+            border-radius: 20px;
+            border: 1px solid #333;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .preset-tuning-container label {
+            font-size: 13px;
+            color: #aaa;
+            font-weight: bold;
+        }
+
+        .preset-tuning-select, .mode-select {
+            background: #2a2a2a;
+            color: #ffcc00;
+            border: 1px solid #444;
+            border-radius: 6px;
+            padding: 5px 10px;
+            font-size: 13px;
+            font-weight: bold;
+            cursor: pointer;
+            outline: none;
+        }
+
+        .mode-select {
+            color: #4fc3f7;
+        }
+
+        /* 模式切換 Toggle 按鈕 */
+        .display-mode-toggle {
+            display: flex;
+            background: #2a2a2a;
+            border-radius: 6px;
+            border: 1px solid #444;
+            overflow: hidden;
+        }
+
+        .toggle-btn {
+            background: transparent;
+            border: none;
+            color: #888;
+            padding: 5px 12px;
+            font-size: 13px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .toggle-btn.active {
+            background: #00e5ff;
+            color: #000;
+        }
+
         .controls {
             display: flex;
-            gap: 10px;
-            margin-bottom: 40px;
+            gap: 8px;
             flex-wrap: wrap;
             justify-content: center;
             align-items: center;
         }
 
         .note-btn {
-            width: 50px;
-            height: 50px;
+            width: 45px;
+            height: 45px;
             border: 1px solid #444;
             background: #1e1e1e;
             color: #aaa;
             cursor: pointer;
             border-radius: 50%;
             font-weight: bold;
-            transition: all 0.3s ease;
+            transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
             display: flex;
             justify-content: center;
             align-items: center;
+            user-select: none;
         }
 
-        .note-btn:hover { border-color: var(--active-color); color: #fff; }
+        .note-btn:hover { border-color: var(--note-color, var(--active-color)); color: #fff; }
 
         .note-btn.active {
-            background: var(--active-color);
-            color: #000;
+            background: var(--note-color, var(--active-color));
+            color: var(--text-color, #000);
             border-color: #fff;
             transform: scale(1.1);
-            box-shadow: 0 0 15px var(--active-color);
+            box-shadow: 0 0 12px var(--note-color, var(--active-color));
         }
 
         /* Clear 按鈕專屬樣式 */
         .clear-btn {
-            height: 50px;
-            padding: 0 20px;
+            height: 45px;
+            padding: 0 18px;
             border: 1px solid #ff4444;
             background: #1e1e1e;
             color: #ff6666;
@@ -80,59 +150,99 @@
             border-radius: 25px;
             font-weight: bold;
             letter-spacing: 1px;
-            transition: all 0.3s ease;
+            transition: all 0.2s ease;
             display: flex;
             justify-content: center;
             align-items: center;
-            margin-left: 10px;
+            margin-left: 5px;
         }
 
         .clear-btn:hover {
             background: #ff4444;
             color: #fff;
-            box-shadow: 0 0 15px rgba(255, 68, 68, 0.5);
+            box-shadow: 0 0 12px rgba(255, 68, 68, 0.5);
+        }
+
+        /* 匯出匯入按鈕專屬樣式 */
+        .io-btn {
+            height: 45px;
+            padding: 0 16px;
+            border: 1px solid #444;
+            background: #1e1e1e;
+            color: #ccc;
+            cursor: pointer;
+            border-radius: 25px;
+            font-weight: bold;
+            font-size: 13px;
+            transition: all 0.2s ease;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-left: 4px;
+        }
+
+        .io-btn:hover {
+            background: #333;
+            color: #fff;
+            border-color: #888;
+        }
+
+        .export-btn:hover {
+            border-color: #4caf50;
+            color: #81c784;
+            box-shadow: 0 0 10px rgba(76, 175, 80, 0.3);
+        }
+
+        .import-btn:hover {
+            border-color: #2196f3;
+            color: #64b5f6;
+            box-shadow: 0 0 10px rgba(33, 150, 243, 0.3);
         }
 
         /* 指板外層容器 */
         .fretboard-outer {
             width: 100%;
-            overflow-x: auto;
-            padding: 40px 0;
+            box-sizing: border-box;
+            overflow-x: hidden;
+            padding: 40px 10px 20px 10px;
             display: flex;
-            justify-content: flex-start;
+            justify-content: center;
         }
 
         .fretboard {
             display: grid;
-            grid-template-rows: repeat(6, 40px);
+            grid-template-rows: repeat(6, 30px); /* 高度調小為原本的 0.75 倍 */
             background: var(--fretboard-bg);
             border-left: 15px solid #111; /* 琴枕 Nut */
             position: relative;
             box-shadow: 0 20px 50px rgba(0,0,0,0.8);
             width: max-content; 
+            margin-left: 0;
+            overflow: visible;
         }
 
         .string {
             display: grid;
-            /* 包含最左側調弦選擇區 + 空弦區 + 24個琴格 */
             grid-template-columns: var(--tuning-width) var(--open-width) repeat(24, var(--fret-width));
             position: relative;
         }
 
-        /* 琴弦 */
+        /* 琴弦：延伸起止點使其涵蓋整個指板與琴頭 */
         .string::after {
             content: "";
             position: absolute;
-            top: 50%; left: var(--tuning-width); right: 0;
+            top: 50%; 
+            left: 0; 
+            width: 100%;
             height: var(--h);
             background: var(--string-color);
             z-index: 2;
             transform: translateY(-50%);
             pointer-events: none;
-            box-shadow: 0 2px 2px rgba(0,0,0,0.5);
+            box-shadow: 0 1px 2px rgba(0,0,0,0.5);
         }
-        .s0::after { --h: 1px; } .s1::after { --h: 1.5px; } .s2::after { --h: 2px; }
-        .s3::after { --h: 2.5px; } .s4::after { --h: 3px; } .s5::after { --h: 3.5px; }
+        .s0::after { --h: 1px; } .s1::after { --h: 1.2px; } .s2::after { --h: 1.6px; }
+        .s3::after { --h: 2px; } .s4::after { --h: 2.4px; } .s5::after { --h: 2.8px; }
 
         /* 琴頭調弦選擇區 */
         .tuning-cell {
@@ -140,9 +250,13 @@
             justify-content: center;
             align-items: center;
             background: #18110c;
-            border-right: 2px solid #222;
+            border-right: 2px solid #33241b;
+            padding: 0 6px;
+            margin-right: 10px; /* 固定與琴枕間距 10px */
+            box-sizing: border-box;
             z-index: 4;
             position: relative;
+            overflow: visible;
         }
 
         .tuning-select {
@@ -152,11 +266,13 @@
             border-radius: 4px;
             font-weight: bold;
             font-size: calc(var(--font-size) + 1px);
-            padding: 2px 4px;
+            padding: 3px 6px;
             cursor: pointer;
             outline: none;
             text-align: center;
             transition: all 0.2s ease;
+            width: 100%;
+            box-sizing: border-box;
         }
 
         .tuning-select:hover {
@@ -172,18 +288,26 @@
             align-items: center;
             position: relative;
             cursor: pointer;
+            user-select: none;
+            transition: background-color 0.15s ease;
         }
 
         .fret:hover {
             background-color: rgba(255, 255, 255, 0.05);
         }
 
+        /* 被右鍵選擇高亮的琴格 */
+        .fret.selected {
+            background-color: rgba(0, 229, 255, 0.25) !important;
+            box-shadow: inset 0 0 0 2px #00e5ff;
+        }
+
         /* 音名圓標 */
         .note-marker {
             width: var(--marker-size);
             height: var(--marker-size);
-            background: var(--active-color);
-            color: #000;
+            background: var(--note-color, var(--active-color));
+            color: var(--text-color, #000);
             border-radius: 50%;
             display: none;
             justify-content: center;
@@ -193,6 +317,7 @@
             z-index: 3;
             border: 2px solid #fff;
             pointer-events: none;
+            box-shadow: 0 0 6px var(--note-color, var(--active-color));
         }
 
         /* 指板圓標 (Dots) */
@@ -211,22 +336,188 @@
 
         .fret-num {
             position: absolute;
-            top: -30px;
-            font-size: 14px;
-            color: #666;
-            width: 100%;
-            text-align: center;
-            pointer-events: none;
-        }
-
-        .tuning-label {
-            position: absolute;
-            top: -30px;
+            top: -28px;
             font-size: 12px;
             color: #888;
             width: 100%;
             text-align: center;
             pointer-events: none;
+            z-index: 10;
+        }
+
+        .tuning-label {
+            position: absolute;
+            top: -28px;
+            font-size: 12px;
+            color: #aaa;
+            width: 100%;
+            text-align: center;
+            pointer-events: none;
+            font-weight: bold;
+            z-index: 10;
+        }
+
+        /* 右鍵自訂面板 */
+        .color-popover {
+            position: fixed;
+            background: #1e1e1e;
+            border: 1px solid #444;
+            border-radius: 12px;
+            padding: 14px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+            z-index: 1000;
+            display: none;
+            flex-direction: column;
+            gap: 12px;
+            width: 230px;
+        }
+
+        .color-popover-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 14px;
+            font-weight: bold;
+            color: #fff;
+            border-bottom: 1px solid #333;
+            padding-bottom: 8px;
+        }
+
+        .current-color-preview {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            border: 1px solid #fff;
+            display: inline-block;
+        }
+
+        .color-picker-row {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .color-picker-row label {
+            font-size: 12px;
+            color: #aaa;
+        }
+
+        .rgb-input-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: #2a2a2a;
+            padding: 6px 10px;
+            border-radius: 6px;
+            border: 1px solid #333;
+        }
+
+        .rgb-input-wrapper input[type="color"] {
+            -webkit-appearance: none;
+            border: none;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            cursor: pointer;
+            background: none;
+        }
+
+        .rgb-input-wrapper input[type="color"]::-webkit-color-swatch-wrapper {
+            padding: 0;
+        }
+
+        .rgb-input-wrapper input[type="color"]::-webkit-color-swatch {
+            border: 1px solid #fff;
+            border-radius: 50%;
+        }
+
+        .rgb-hex-text {
+            font-size: 13px;
+            font-family: monospace;
+            color: #ffffff;
+            font-weight: bold;
+        }
+
+        /* 七彩低彩度推薦色板 */
+        .color-presets {
+            display: flex;
+            gap: 5px;
+            justify-content: space-between;
+        }
+
+        .preset-dot {
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            cursor: pointer;
+            border: 1px solid rgba(255,255,255,0.2);
+            transition: transform 0.15s ease;
+        }
+
+        .preset-dot:hover {
+            transform: scale(1.25);
+            border-color: #fff;
+        }
+
+        .popover-btn-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .split-btn-group {
+            display: flex;
+            gap: 6px;
+        }
+
+        .split-btn-group .action-btn {
+            flex: 1;
+        }
+
+        .action-btn {
+            background: #333;
+            border: 1px solid #555;
+            color: #ccc;
+            border-radius: 6px;
+            padding: 6px 0;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-align: center;
+            font-weight: bold;
+        }
+
+        .action-btn:hover {
+            background: #444;
+            color: #fff;
+        }
+
+        .set-root-btn {
+            background: #1976d2;
+            border-color: #2196f3;
+            color: #fff;
+        }
+
+        .set-root-btn:hover {
+            background: #2196f3;
+            box-shadow: 0 0 8px rgba(33, 150, 243, 0.5);
+        }
+
+        .octave-btn {
+            background: #7b1fa2;
+            border-color: #ab47bc;
+            color: #fff;
+        }
+
+        .octave-btn:hover {
+            background: #9c27b0;
+            box-shadow: 0 0 8px rgba(156, 39, 176, 0.5);
+        }
+
+        .reset-color-btn:hover {
+            background: #ff4444;
+            color: #fff;
+            border-color: #ff4444;
         }
     </style>
 </head>
@@ -234,65 +525,597 @@
 
     <h2>GUITAR FRETBOARD 24 FRETS</h2>
 
-    <div class="controls" id="controls"></div>
+    <div class="controls-wrapper">
+        <div class="preset-tuning-container">
+            <label for="presetTuningSelect">快速調弦：</label>
+            <select id="presetTuningSelect" class="preset-tuning-select">
+                <option value="standard">Standard (E A D G B E)</option>
+                <option value="dropD">Drop D (D A D G B E)</option>
+                <option value="dStandard">D Standard (D G C F A D)</option>
+                <option value="dropC">Drop C (C G C F A D)</option>
+                <option value="openG">Open G (D G D G B D)</option>
+                <option value="openD">Open D (D A D F# A D)</option>
+                <option value="dadgad">DADGAD (D A D G A D)</option>
+                <option value="halfStepDown">Half-Step Down (D# G# C# F# A# D#)</option>
+            </select>
+
+            <label for="keySelect">主音/調性：</label>
+            <select id="keySelect" class="mode-select">
+                <option value="0">C</option>
+                <option value="1">C# / D♭</option>
+                <option value="2" selected>D</option>
+                <option value="3">D# / E♭</option>
+                <option value="4">E</option>
+                <option value="5">F</option>
+                <option value="6">F# / G♭</option>
+                <option value="7">G</option>
+                <option value="8">G# / A♭</option>
+                <option value="9">A</option>
+                <option value="10">A# / B♭</option>
+                <option value="11">B</option>
+            </select>
+
+            <label>顯示模式：</label>
+            <div class="display-mode-toggle">
+                <button class="toggle-btn active" id="modeNoteBtn">音名</button>
+                <button class="toggle-btn" id="modeNumBtn">數字 (簡譜)</button>
+            </div>
+
+            <!-- 匯出匯入按鈕 -->
+            <button class="io-btn export-btn" id="exportBtn">📤 匯出 JSON</button>
+            <button class="io-btn import-btn" id="importBtn">📥 匯入 JSON</button>
+        </div>
+
+        <div class="controls" id="controls"></div>
+    </div>
 
     <div class="fretboard-outer" id="fretboardOuter">
         <div class="fretboard" id="fretboard"></div>
     </div>
 
+    <!-- 右鍵 RGB 選色面板 -->
+    <div class="color-popover" id="colorPopover">
+        <div class="color-popover-header">
+            <span id="popoverTitle">自訂音符顏色</span>
+            <span class="current-color-preview" id="colorPreview"></span>
+        </div>
+        
+        <div class="color-picker-row">
+            <label>RGB 調色盤：</label>
+            <div class="rgb-input-wrapper">
+                <input type="color" id="colorPickerInput">
+                <span class="rgb-hex-text" id="hexText">#FFFFFF</span>
+            </div>
+        </div>
+
+        <div class="color-picker-row">
+            <label>柔和七彩推薦色：</label>
+            <div class="color-presets">
+                <div class="preset-dot" style="background: #e57373;" data-color="#e57373" title="柔紅"></div>
+                <div class="preset-dot" style="background: #ffb74d;" data-color="#ffb74d" title="柔橘"></div>
+                <div class="preset-dot" style="background: #fff176;" data-color="#fff176" title="柔黃"></div>
+                <div class="preset-dot" style="background: #81c784;" data-color="#81c784" title="柔綠"></div>
+                <div class="preset-dot" style="background: #64b5f6;" data-color="#64b5f6" title="柔藍"></div>
+                <div class="preset-dot" style="background: #7986cb;" data-color="#7986cb" title="柔靛"></div>
+                <div class="preset-dot" style="background: #ba68c8;" data-color="#ba68c8" title="柔紫"></div>
+            </div>
+        </div>
+
+        <div class="popover-btn-group">
+            <div id="rootBtnContainer">
+                <button class="action-btn set-root-btn" id="setMainRootBtn" style="width: 100%;">★ 設為主音 (Do)</button>
+            </div>
+            <button class="action-btn reset-color-btn" id="resetColorBtn">重設為預設白色</button>
+            <button class="action-btn" id="resetCellColorBtn" style="background: #444; color: #ffca28; border-color: #ffb300;">↺ 清除此琴格獨立色</button>
+            <button class="action-btn" id="resetAllCellsColorBtn" style="background: #332200; color: #ffa726; border-color: #ff9800;">↺↺ 全部 150 個琴格回歸全局</button>
+        </div>
+    </div>
+
     <script>
         const notes = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
+        
+        // 各相對半音距離對應的簡譜數字名稱
+        const relativeDegreeNames = [
+            "1",    // 0 半音 (主音 Root)
+            "1♯/2♭", // 1 半音
+            "2",    // 2 半音
+            "2♯/3♭", // 3 半音 (如 D 大調下的 C 呈現 7♭ / 3♭ 關係)
+            "3",    // 4 半音
+            "4",    // 5 半音
+            "4♯/5♭", // 6 半音
+            "5",    // 7 半音
+            "5♯/6♭", // 8 半音
+            "6",    // 9 半音
+            "6♯/7♭", // 10 半音
+            "7"     // 11 半音
+        ];
+
+        let selectedKeyIndex = 2; // 預設 D 大調 (0=C, 2=D...)
+        let displayMode = "note"; // "note" 表示音名, "number" 表示數字簡譜
+
+        const DEFAULT_COLOR = "#ffffff";
+        
+        // 鋼琴黑白鍵相對半音間隔 (0=Do, 2=Re, 4=Mi, 5=Fa, 7=Sol, 9=La, 11=Si 為白鍵)
+        const pianoWhiteKeyOffsets = new Set([0, 2, 4, 5, 7, 9, 11]);
+        
+        // 音名基礎色 (用於頂部按鈕及預設顏色)
+        const noteColors = {};
+        notes.forEach(note => {
+            noteColors[note] = DEFAULT_COLOR;
+        });
+
+        // 6x25 指板獨立音格顏色紀錄 (格式: "s{stringIdx}-f{fretIdx}" => hexColor)
+        const cellColors = {};
+
         // 預設標準調弦 (1弦到6弦：E, B, G, D, A, E)
-        const tuning = [4, 11, 7, 2, 9, 4]; 
+        let tuning = [4, 11, 7, 2, 9, 4]; 
         const activeNotes = new Set();
         
-        // 24格指板需要標記圓點的琴格
+        // 預設調弦資料庫
+        const presetTunings = {
+            standard: [4, 11, 7, 2, 9, 4],
+            dropD: [4, 11, 7, 2, 9, 2],
+            dStandard: [2, 9, 5, 0, 7, 2],
+            dropC: [2, 9, 5, 0, 7, 0],
+            openG: [2, 11, 7, 2, 7, 2],
+            openD: [2, 9, 6, 2, 9, 2],
+            dadgad: [2, 9, 7, 2, 9, 2],
+            halfStepDown: [3, 10, 6, 1, 8, 3]
+        };
+
+        // 24格指板圓點標記
         const singleDots = [3, 5, 7, 9, 15, 17, 19, 21];
         const doubleDots = [12, 24];
 
         const controls = document.getElementById('controls');
         const fretboard = document.getElementById('fretboard');
         const fretboardOuter = document.getElementById('fretboardOuter');
+        const presetTuningSelect = document.getElementById('presetTuningSelect');
+        const keySelect = document.getElementById('keySelect');
+        const modeNoteBtn = document.getElementById('modeNoteBtn');
+        const modeNumBtn = document.getElementById('modeNumBtn');
+
+        // 色彩選單元件
+        const colorPopover = document.getElementById('colorPopover');
+        const popoverTitle = document.getElementById('popoverTitle');
+        const colorPreview = document.getElementById('colorPreview');
+        const colorPickerInput = document.getElementById('colorPickerInput');
+        const hexText = document.getElementById('hexText');
+        const rootBtnContainer = document.getElementById('rootBtnContainer');
+        const resetColorBtn = document.getElementById('resetColorBtn');
+        const resetCellColorBtn = document.getElementById('resetCellColorBtn');
+        const resetAllCellsColorBtn = document.getElementById('resetAllCellsColorBtn');
+        
+        // 當前彈窗目標 ({ type: 'note', note: 'C' } 或 { type: 'cell', key: 's0-f5', note: 'A' } 或 { type: 'multi', keys: [...] })
+        let activePopoverTarget = null;
 
         let currentScale = 1;
         const noteButtons = {};
 
-        // 初始化上方按鈕
-        notes.forEach(note => {
-            const btn = document.createElement('button');
-            btn.className = 'note-btn';
-            btn.innerText = note;
-            btn.onclick = () => {
-                if (activeNotes.has(note)) {
-                    activeNotes.delete(note);
-                } else {
-                    activeNotes.add(note);
+        // 取得音符在當前選取調性下的顯示文字 (音名或簡譜數字)
+        function getDisplayText(noteIdx) {
+            if (displayMode === 'note') {
+                return notes[noteIdx];
+            } else {
+                const interval = (noteIdx - selectedKeyIndex + 12) % 12;
+                return relativeDegreeNames[interval];
+            }
+        }
+
+        // 拖曳連續選取變數 (左鍵)
+        let isMouseDown = false;
+        let dragModeAdd = true;
+
+        // 右鍵連續框選音符變數
+        let isRightMouseDown = false;
+        let isRightDragging = false;
+        const selectedCellKeys = new Set();
+        let rightClickLastPos = { x: 0, y: 0 };
+
+        window.addEventListener('mousedown', (e) => { 
+            if (e.button === 0) {
+                isMouseDown = true; 
+            } else if (e.button === 2) {
+                isRightMouseDown = true;
+                isRightDragging = false;
+            }
+        });
+
+        window.addEventListener('mouseup', (e) => { 
+            if (e.button === 0) {
+                isMouseDown = false; 
+            } else if (e.button === 2) {
+                if (isRightMouseDown && isRightDragging) {
+                    if (selectedCellKeys.size > 0) {
+                        openColorPopover({ type: 'multi', keys: Array.from(selectedCellKeys) }, rightClickLastPos.x, rightClickLastPos.y);
+                    }
+                }
+                isRightMouseDown = false;
+                isRightDragging = false;
+            }
+        });
+
+        // 避免右鍵拖曳結束時觸發預設選單
+        window.addEventListener('contextmenu', (e) => {
+            if (isRightDragging || selectedCellKeys.size > 1) {
+                e.preventDefault();
+            }
+        });
+
+        function clearCellSelections() {
+            selectedCellKeys.clear();
+            document.querySelectorAll('.fret.selected').forEach(el => el.classList.remove('selected'));
+        }
+
+        function getContrastTextColor(hexColor) {
+            const hex = hexColor.replace('#', '');
+            const r = parseInt(hex.substring(0, 2), 16);
+            const g = parseInt(hex.substring(2, 4), 16);
+            const b = parseInt(hex.substring(4, 6), 16);
+            const yiq = ((r * 299) + (g * 587) + (b * 114)) / 1000;
+            return (yiq >= 128) ? '#000000' : '#ffffff';
+        }
+
+        // 開啟右鍵自訂選單
+        function openColorPopover(target, x, y) {
+            activePopoverTarget = target;
+            let currentColor = DEFAULT_COLOR;
+
+            if (target.type === 'note') {
+                rootBtnContainer.style.display = 'block';
+                rootBtnContainer.innerHTML = `<button class="action-btn set-root-btn" id="setMainRootBtn" style="width: 100%;">★ 設為主音 (${target.note})</button>`;
+                bindMainRootBtnEvent();
+                popoverTitle.innerText = `音符 【 ${target.note} 】（全體）`;
+                currentColor = noteColors[target.note];
+                resetCellColorBtn.style.display = 'none';
+            } else if (target.type === 'cell') {
+                rootBtnContainer.style.display = 'block';
+                rootBtnContainer.innerHTML = `<button class="action-btn set-root-btn" id="setMainRootBtn" style="width: 100%;">★ 設為主音 (${target.note})</button>`;
+                bindMainRootBtnEvent();
+                const [sStr, fStr] = target.key.split('-');
+                const sNum = parseInt(sStr.replace('s', '')) + 1;
+                const fNum = parseInt(fStr.replace('f', ''));
+                popoverTitle.innerText = `${sNum}弦${fNum}格 【 ${target.note} 】`;
+                currentColor = cellColors[target.key] || noteColors[target.note] || DEFAULT_COLOR;
+                resetCellColorBtn.style.display = 'block';
+                resetCellColorBtn.innerText = '↺ 清除此琴格獨立色';
+            } else if (target.type === 'multi') {
+                rootBtnContainer.style.display = 'none';
+                popoverTitle.innerText = `已選取 ${target.keys.length} 個琴格音符`;
+                currentColor = DEFAULT_COLOR;
+                resetCellColorBtn.style.display = 'block';
+                resetCellColorBtn.innerText = '↺ 清除所選琴格獨立色';
+            }
+
+            colorPickerInput.value = currentColor;
+            hexText.innerText = currentColor.toUpperCase();
+            colorPreview.style.background = currentColor;
+            
+            const popoverWidth = 240;
+            const popoverHeight = 270;
+            const posX = (x + popoverWidth > window.innerWidth) ? window.innerWidth - popoverWidth - 10 : x;
+            const offsetY = 25;
+            const posY = (y + offsetY + popoverHeight > window.innerHeight) ? window.innerHeight - popoverHeight - 10 : y + offsetY;
+
+            colorPopover.style.left = `${posX}px`;
+            colorPopover.style.top = `${posY}px`;
+            colorPopover.style.display = 'flex';
+        }
+
+        function bindMainRootBtnEvent() {
+            const btn = document.getElementById('setMainRootBtn');
+            if (!btn) return;
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                if (!activePopoverTarget) return;
+                
+                const targetNote = activePopoverTarget.note;
+
+                rootBtnContainer.innerHTML = `
+                    <div class="split-btn-group">
+                        <button class="action-btn set-root-btn" id="setBwBtn">🎹 黑白鍵</button>
+                        <button class="action-btn octave-btn" id="setOctaveBtn">🎼 同八度同色</button>
+                    </div>
+                `;
+
+                document.getElementById('setBwBtn').addEventListener('click', (ev) => {
+                    ev.stopPropagation();
+                    setAsRootNote(targetNote);
+                    closeColorPopover();
+                });
+
+                document.getElementById('setOctaveBtn').addEventListener('click', (ev) => {
+                    ev.stopPropagation();
+                    setOctaveColors(targetNote);
+                    closeColorPopover();
+                });
+            });
+        }
+
+        function closeColorPopover() {
+            colorPopover.style.display = 'none';
+            activePopoverTarget = null;
+            clearCellSelections();
+        }
+
+        const octavePalette = [
+            "#e57373", 
+            "#ffb74d", 
+            "#81c784", 
+            "#64b5f6", 
+            "#ba68c8"  
+        ];
+
+        function setAsRootNote(rootNote) {
+            const rootIndex = notes.indexOf(rootNote);
+            if (rootIndex === -1) return;
+
+            // 同步切換選單的主音調性設定
+            keySelect.value = rootIndex;
+            selectedKeyIndex = rootIndex;
+
+            Object.keys(cellColors).forEach(k => delete cellColors[k]);
+
+            notes.forEach((note, idx) => {
+                const semitoneDistance = (idx - rootIndex + 12) % 12;
+                noteColors[note] = pianoWhiteKeyOffsets.has(semitoneDistance) ? "#ffffff" : "#333333";
+            });
+            updateDisplay();
+        }
+
+        function setOctaveColors(rootNote) {
+            const rootIndex = notes.indexOf(rootNote);
+            if (rootIndex === -1) return;
+
+            keySelect.value = rootIndex;
+            selectedKeyIndex = rootIndex;
+
+            Object.keys(cellColors).forEach(k => delete cellColors[k]);
+
+            for (let s = 0; s < 6; s++) {
+                const stringOpenPitch = tuning[s]; 
+                const stringOctaveBaseOffset = [0, 5, 10, 15, 19, 24][s];
+
+                for (let f = 0; f <= 24; f++) {
+                    const cellKey = `s${s}-f${f}`;
+                    const absoluteSemitones = stringOpenPitch + f + stringOctaveBaseOffset;
+
+                    const relativeToRoot = absoluteSemitones - rootIndex;
+                    const octaveIndex = Math.floor(relativeToRoot / 12);
+
+                    const colorIdx = Math.max(0, Math.min(octavePalette.length - 1, octaveIndex));
+                    cellColors[cellKey] = octavePalette[colorIdx];
+                }
+            }
+            updateDisplay();
+        }
+
+        colorPickerInput.addEventListener('input', (e) => applySelectedColor(e.target.value));
+        
+        function applySelectedColor(color) {
+            if (!activePopoverTarget) return;
+            if (activePopoverTarget.type === 'note') {
+                noteColors[activePopoverTarget.note] = color;
+            } else if (activePopoverTarget.type === 'cell') {
+                cellColors[activePopoverTarget.key] = color;
+            } else if (activePopoverTarget.type === 'multi') {
+                activePopoverTarget.keys.forEach(k => {
+                    cellColors[k] = color;
+                });
+            }
+            updateDisplay();
+        }
+
+        document.querySelectorAll('.preset-dot').forEach(dot => {
+            dot.addEventListener('click', () => {
+                applySelectedColor(dot.getAttribute('data-color'));
+                closeColorPopover();
+            });
+        });
+
+        resetColorBtn.addEventListener('click', () => {
+            applySelectedColor(DEFAULT_COLOR);
+            closeColorPopover();
+        });
+
+        resetCellColorBtn.addEventListener('click', () => {
+            if (activePopoverTarget) {
+                if (activePopoverTarget.type === 'cell') {
+                    delete cellColors[activePopoverTarget.key];
+                } else if (activePopoverTarget.type === 'multi') {
+                    activePopoverTarget.keys.forEach(k => delete cellColors[k]);
                 }
                 updateDisplay();
+                closeColorPopover();
+            }
+        });
+
+        resetAllCellsColorBtn.addEventListener('click', () => {
+            Object.keys(cellColors).forEach(k => delete cellColors[k]);
+            updateDisplay();
+            closeColorPopover();
+        });
+
+        document.addEventListener('click', (e) => {
+            if (!colorPopover.contains(e.target) && !e.target.classList.contains('note-btn') && !e.target.classList.contains('fret')) {
+                closeColorPopover();
+            }
+        });
+
+        function handleNoteToggle(noteName, isFirstClick) {
+            if (isFirstClick) {
+                if (activeNotes.has(noteName)) {
+                    dragModeAdd = false;
+                    activeNotes.delete(noteName);
+                } else {
+                    dragModeAdd = true;
+                    activeNotes.add(noteName);
+                }
+            } else {
+                if (dragModeAdd) {
+                    activeNotes.add(noteName);
+                } else {
+                    activeNotes.delete(noteName);
+                }
+            }
+            updateDisplay();
+        }
+
+        // 初始化頂部音符控制按鈕
+        notes.forEach((note, idx) => {
+            const btn = document.createElement('button');
+            btn.className = 'note-btn';
+            btn.setAttribute('data-note-idx', idx);
+            btn.innerText = getDisplayText(idx);
+            
+            btn.onmousedown = (e) => {
+                if (e.button === 0) {
+                    handleNoteToggle(note, true);
+                }
             };
+
+            btn.onmouseenter = () => {
+                if (isMouseDown) {
+                    handleNoteToggle(note, false);
+                }
+            };
+
+            btn.oncontextmenu = (e) => {
+                e.preventDefault();
+                openColorPopover({ type: 'note', note: note }, e.clientX, e.clientY);
+            };
+
             controls.appendChild(btn);
             noteButtons[note] = btn;
         });
 
-        // 在 B 音右側新增 Clear 按鈕
+        // 隱藏的檔案上傳 Input
+        const fileInput = document.createElement('input');
+        fileInput.type = 'file';
+        fileInput.accept = '.json';
+        fileInput.style.display = 'none';
+        document.body.appendChild(fileInput);
+
         const clearBtn = document.createElement('button');
         clearBtn.className = 'clear-btn';
         clearBtn.innerText = 'CLEAR';
         clearBtn.onclick = () => {
-            activeNotes.clear(); // 清空已選取的音符
-            updateDisplay();     // 更新指板與按鈕狀態
+            activeNotes.clear();
+            updateDisplay();
         };
         controls.appendChild(clearBtn);
 
+        document.getElementById('exportBtn').onclick = exportFretboardState;
+        document.getElementById('importBtn').onclick = () => fileInput.click();
+
+        fileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                try {
+                    const data = JSON.parse(event.target.result);
+                    importFretboardState(data);
+                } catch (err) {
+                    alert('格式錯誤，請選擇有效的指板 JSON 檔案。');
+                }
+                fileInput.value = '';
+            };
+            reader.readAsText(file);
+        });
+
+        function exportFretboardState() {
+            const state = {
+                tuning: tuning,
+                selectedKeyIndex: selectedKeyIndex,
+                displayMode: displayMode,
+                activeNotes: Array.from(activeNotes),
+                noteColors: noteColors,
+                cellColors: cellColors
+            };
+
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(state, null, 2));
+            const downloadAnchor = document.createElement('a');
+            downloadAnchor.setAttribute("href", dataStr);
+            downloadAnchor.setAttribute("download", `guitar_fretboard_${new Date().toISOString().slice(0,10)}.json`);
+            document.body.appendChild(downloadAnchor);
+            downloadAnchor.click();
+            downloadAnchor.remove();
+        }
+
+        function importFretboardState(data) {
+            if (data.tuning && Array.isArray(data.tuning)) {
+                tuning = [...data.tuning];
+            }
+
+            if (typeof data.selectedKeyIndex === 'number') {
+                selectedKeyIndex = data.selectedKeyIndex;
+                keySelect.value = selectedKeyIndex;
+            }
+
+            if (data.displayMode) {
+                displayMode = data.displayMode;
+                modeNoteBtn.classList.toggle('active', displayMode === 'note');
+                modeNumBtn.classList.toggle('active', displayMode === 'number');
+            }
+
+            if (data.activeNotes && Array.isArray(data.activeNotes)) {
+                activeNotes.clear();
+                data.activeNotes.forEach(n => activeNotes.add(n));
+            }
+
+            if (data.noteColors && typeof data.noteColors === 'object') {
+                Object.assign(noteColors, data.noteColors);
+            }
+
+            if (data.cellColors && typeof data.cellColors === 'object') {
+                Object.keys(cellColors).forEach(k => delete cellColors[k]);
+                Object.assign(cellColors, data.cellColors);
+            }
+
+            initBoard();
+            updateDisplay();
+        }
+
+        // 調性選單變更事件
+        keySelect.addEventListener('change', (e) => {
+            selectedKeyIndex = parseInt(e.target.value);
+            updateDisplay();
+        });
+
+        // 顯示模式切換按鈕事件
+        modeNoteBtn.addEventListener('click', () => {
+            displayMode = 'note';
+            modeNoteBtn.classList.add('active');
+            modeNumBtn.classList.remove('active');
+            updateDisplay();
+        });
+
+        modeNumBtn.addEventListener('click', () => {
+            displayMode = 'number';
+            modeNumBtn.classList.add('active');
+            modeNoteBtn.classList.remove('active');
+            updateDisplay();
+        });
+
+        presetTuningSelect.addEventListener('change', (e) => {
+            const selectedKey = e.target.value;
+            if (presetTunings[selectedKey]) {
+                tuning = [...presetTunings[selectedKey]];
+                initBoard();
+                updateDisplay();
+            }
+        });
+
         // 初始化指板
         function initBoard() {
-            fretboard.innerHTML = ''; // 清空重新渲染
+            fretboard.innerHTML = '';
 
             for (let s = 0; s < 6; s++) {
                 const stringDiv = document.createElement('div');
                 stringDiv.className = `string s${s}`;
 
-                // 1. 最左側：琴頭 Tuning 選擇選單
                 const tuningCell = document.createElement('div');
                 tuningCell.className = 'tuning-cell';
                 
@@ -313,31 +1136,54 @@
                     select.appendChild(opt);
                 });
 
-                // 調弦變更事件
                 select.onchange = (e) => {
                     tuning[s] = parseInt(e.target.value);
-                    initBoard(); // 重置並重新計算指板上的音高
+                    initBoard();
                     updateDisplay();
                 };
 
                 tuningCell.appendChild(select);
                 stringDiv.appendChild(tuningCell);
 
-                // 2. 指板琴格 (0格空弦 + 1~24格)
+                // 琴格 0~24
                 for (let f = 0; f <= 24; f++) {
                     const fretDiv = document.createElement('div');
                     fretDiv.className = 'fret';
                     
                     const noteIdx = (tuning[s] + f) % 12;
                     const noteName = notes[noteIdx];
+                    const cellKey = `s${s}-f${f}`;
+                    fretDiv.setAttribute('data-cell-key', cellKey);
                     
-                    fretDiv.onclick = () => {
-                        if (activeNotes.has(noteName)) {
-                            activeNotes.delete(noteName);
-                        } else {
-                            activeNotes.add(noteName);
+                    fretDiv.onmousedown = (e) => {
+                        if (e.button === 0) {
+                            handleNoteToggle(noteName, true);
+                        } else if (e.button === 2) {
+                            clearCellSelections();
+                            selectedCellKeys.add(cellKey);
+                            fretDiv.classList.add('selected');
+                            rightClickLastPos = { x: e.clientX, y: e.clientY };
                         }
-                        updateDisplay();
+                    };
+
+                    fretDiv.onmouseenter = (e) => {
+                        if (isMouseDown) {
+                            handleNoteToggle(noteName, false);
+                        } else if (isRightMouseDown) {
+                            isRightDragging = true;
+                            if (!selectedCellKeys.has(cellKey)) {
+                                selectedCellKeys.add(cellKey);
+                                fretDiv.classList.add('selected');
+                            }
+                            rightClickLastPos = { x: e.clientX, y: e.clientY };
+                        }
+                    };
+
+                    fretDiv.oncontextmenu = (e) => {
+                        e.preventDefault();
+                        if (!isRightDragging && selectedCellKeys.size <= 1) {
+                            openColorPopover({ type: 'cell', key: cellKey, note: noteName }, e.clientX, e.clientY);
+                        }
                     };
                     
                     if (s === 2) { 
@@ -349,7 +1195,7 @@
                         fretDiv.innerHTML += `<div class="dot"></div>`;
                     }
 
-                    fretDiv.innerHTML += `<div class="note-marker" data-note="${noteName}">${noteName}</div>`;
+                    fretDiv.innerHTML += `<div class="note-marker" data-note-idx="${noteIdx}" data-note="${noteName}" data-cell-key="${cellKey}">${getDisplayText(noteIdx)}</div>`;
                     
                     if (s === 0) {
                         const num = document.createElement('div');
@@ -365,13 +1211,30 @@
         }
 
         function updateDisplay() {
+            // 更新指板琴格圓標文字與顏色
             document.querySelectorAll('.note-marker').forEach(marker => {
                 const note = marker.getAttribute('data-note');
-                marker.style.display = activeNotes.has(note) ? 'flex' : 'none';
+                const noteIdx = parseInt(marker.getAttribute('data-note-idx'));
+                const cellKey = marker.getAttribute('data-cell-key');
+                const isVisible = activeNotes.has(note);
+                
+                marker.innerText = getDisplayText(noteIdx);
+                marker.style.display = isVisible ? 'flex' : 'none';
+                if (isVisible) {
+                    const color = cellColors[cellKey] || noteColors[note] || DEFAULT_COLOR;
+                    marker.style.setProperty('--note-color', color);
+                    marker.style.setProperty('--text-color', getContrastTextColor(color));
+                }
             });
 
-            notes.forEach(note => {
+            // 更新頂部 12 音按鈕文字與樣式
+            notes.forEach((note, idx) => {
                 const btn = noteButtons[note];
+                const color = noteColors[note];
+                btn.innerText = getDisplayText(idx);
+                btn.style.setProperty('--note-color', color);
+                btn.style.setProperty('--text-color', getContrastTextColor(color));
+
                 if (activeNotes.has(note)) {
                     btn.classList.add('active');
                 } else {
@@ -380,26 +1243,24 @@
             });
         }
 
-        // 動態更新指板尺寸（透過 CSS 變數）
         function applyScale(scale) {
             currentScale = scale;
             const root = document.documentElement;
-            root.style.setProperty('--tuning-width', `${60 * scale}px`);
-            root.style.setProperty('--open-width', `${70 * scale}px`);
+            root.style.setProperty('--tuning-width', `${110 * scale}px`);
+            root.style.setProperty('--open-width', `${55 * scale}px`);
             root.style.setProperty('--fret-width', `${75 * scale}px`);
             root.style.setProperty('--marker-size', `${Math.max(16, 28 * scale)}px`);
             root.style.setProperty('--dot-size', `${Math.max(10, 18 * scale)}px`);
             root.style.setProperty('--font-size', `${Math.max(9, 12 * scale)}px`);
         }
 
-        // 自動等比例適配視窗大小
         function autoFitFretboard() {
-            const availableWidth = fretboardOuter.clientWidth; 
-            const baseWidth = 60 + 15 + 70 + (24 * 75); // 原始總寬度 1945px
+            const availableWidth = window.innerWidth - 40; 
+            const baseWidth = 110 + 55 + 15 + 10 + (24 * 75) + 125;
             
             if (availableWidth > 0) {
                 let scale = availableWidth / baseWidth;
-                scale = Math.min(1.0, scale);
+                scale = Math.min(1.3, scale);
                 scale = Math.max(0.35, scale); 
                 applyScale(scale);
             }
@@ -407,26 +1268,22 @@
 
         initBoard();
 
-        // 頁面載入與視窗縮放時自動適配
         window.addEventListener('load', autoFitFretboard);
         window.addEventListener('resize', autoFitFretboard);
 
-        // 僅在游標停留於底部卷軸條區域時支援滾輪縮放
         fretboardOuter.addEventListener('wheel', (e) => {
             const rect = fretboardOuter.getBoundingClientRect();
-            const scrollbarZoneHeight = 25; 
+            const scrollbarZoneHeight = 35; 
             const isOverScrollbar = e.clientY >= (rect.bottom - scrollbarZoneHeight) && e.clientY <= rect.bottom;
 
             if (isOverScrollbar) {
                 e.preventDefault();
-                
                 let newScale = currentScale;
                 if (e.deltaY < 0) {
-                    newScale = Math.min(currentScale + 0.05, 1.8);
+                    newScale = Math.min(currentScale + 0.05, 1.5);
                 } else {
                     newScale = Math.max(currentScale - 0.05, 0.35);
                 }
-                
                 applyScale(newScale);
             }
         }, { passive: false });
